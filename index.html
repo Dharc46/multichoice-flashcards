@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multichoice Flashcards</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Study companion</p>
+      <h1>Multichoice Flashcards</h1>
+      <p class="subtitle">Tạo gói câu hỏi và luyện tập bất cứ lúc nào.</p>
+    </div>
+    <button id="reset-data-btn" class="ghost-btn" title="Xóa toàn bộ dữ liệu đã lưu">Xóa dữ liệu</button>
+  </header>
+
+  <main class="layout">
+    <section class="panel" aria-labelledby="pack-management">
+      <h2 id="pack-management">Quản lý gói câu hỏi</h2>
+
+      <form id="create-pack-form" class="card gap-md">
+        <h3>Tạo gói mới</h3>
+        <label class="field">
+          <span>Tên gói</span>
+          <input type="text" id="pack-name" placeholder="Ví dụ: Lịch sử thế giới" required />
+        </label>
+        <button type="submit" class="primary-btn">Thêm gói</button>
+      </form>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Danh sách gói</h3>
+          <small id="pack-count">0 gói</small>
+        </div>
+        <ul id="pack-list" class="pack-list" aria-live="polite"></ul>
+      </div>
+
+      <form id="question-form" class="card gap-md">
+        <h3>Thêm câu hỏi</h3>
+        <label class="field">
+          <span>Chọn gói</span>
+          <select id="question-pack-select"></select>
+        </label>
+        <label class="field">
+          <span>Nội dung câu hỏi</span>
+          <textarea id="question-text" rows="3" required></textarea>
+        </label>
+        <fieldset class="field">
+          <legend>Đáp án (chọn một đáp án đúng)</legend>
+          <div class="options-grid" id="options-container">
+            <!-- option rows injected here -->
+          </div>
+          <button type="button" id="add-option-btn" class="add-option-btn">+ Thêm đáp án</button>
+        </fieldset>
+        <button type="submit" class="primary-btn">Lưu câu hỏi</button>
+      </form>
+    </section>
+
+    <section class="panel" aria-labelledby="practice-area">
+      <h2 id="practice-area">Luyện tập</h2>
+      <div id="selected-pack" class="card gap-md" aria-live="polite"></div>
+      <div id="quiz-area" class="card gap-md" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <template id="pack-item-template">
+    <li class="pack-item">
+      <button class="pack-btn"></button>
+      <button class="icon-btn" title="Xóa gói">🗑</button>
+    </li>
+  </template>
+
+  <template id="option-row-template">
+    <div class="option-row">
+      <span class="option-index"></span>
+      <input type="text" class="option-input" required />
+      <input type="radio" name="correct-option" class="option-radio" />
+      <button type="button" class="option-remove-btn" title="Xóa đáp án">&times;</button>
+    </div>
+  </template>
+
+  <script src="script.js" type="module"></script>
+</body>
+</html>
