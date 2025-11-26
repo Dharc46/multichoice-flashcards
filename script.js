@@ -13,6 +13,9 @@ const dom = {
   optionsContainer: document.getElementById('options-container'),
   addOptionBtn: document.getElementById('add-option-btn'),
   questionHelperText: document.getElementById('question-form-hint'),
+  bulkImportText: document.getElementById('bulk-import-text'),
+  bulkImportBtn: document.getElementById('bulk-import-btn'),
+  bulkImportHint: document.getElementById('bulk-import-hint'),
   selectedPackCard: document.getElementById('selected-pack'),
   quizArea: document.getElementById('quiz-area'),
   packTemplate: document.getElementById('pack-item-template'),
@@ -33,6 +36,164 @@ function init() {
   bindEvents();
   resetOptionRows();
   renderAll();
+}
+
+function handleBulkImport() {
+  if (!dom.bulkImportText || !dom.bulkImportHint) return;
+  setBulkImportHint('');
+  if (!state.packs.length) {
+    setBulkImportHint('Chưa có gói nào để thêm câu hỏi.', 'error');
+    return;
+  }
+
+  const packId = dom.questionPackSelect.value;
+  const targetPack = state.packs.find((pack) => pack.id === packId);
+  if (!targetPack) {
+    setBulkImportHint('Không tìm thấy gói đã chọn.', 'error');
+    return;
+  }
+
+  const rawInput = dom.bulkImportText.value;
+  if (!rawInput.trim()) {
+    setBulkImportHint('Vui lòng dán nội dung câu hỏi để nhập nhanh.', 'error');
+    dom.bulkImportText.focus();
+    return;
+  }
+
+  const result = parseBulkImportInput(rawInput);
+  if (!result.success) {
+    setBulkImportHint(result.message, 'error');
+    return;
+  }
+
+  result.questions.forEach((question) => {
+    targetPack.questions.push(question);
+  });
+  persistState();
+  dom.bulkImportText.value = '';
+  setBulkImportHint(`Đã thêm ${result.questions.length} câu hỏi vào "${targetPack.name}".`, 'success');
+
+  if (state.currentPackId === targetPack.id && state.quizSession) {
+    state.quizSession = null;
+  }
+
+  renderAll();
+}
+
+function parseBulkImportInput(rawText) {
+  const normalized = rawText.replace(/\r/g, '\n');
+  const blocks = normalized
+    .split(/\n\s*\n/g)
+    .map((block) => block.trim())
+    .filter(Boolean);
+
+  if (!blocks.length) {
+    return {
+      success: false,
+      message: 'Không tìm thấy câu hỏi hợp lệ trong nội dung đã nhập.',
+    };
+  }
+
+  const questions = [];
+
+  for (let index = 0; index < blocks.length; index += 1) {
+    const block = blocks[index];
+    const lines = block
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+
+    if (lines.length < MIN_OPTIONS + 1) {
+      return {
+        success: false,
+        message: `Khối câu hỏi ${index + 1} cần tối thiểu 1 câu hỏi và ${MIN_OPTIONS} đáp án.`,
+      };
+    }
+
+    const optionStart = lines.findIndex((line) => /^[-*]/.test(line));
+    if (optionStart <= 0) {
+      return {
+        success: false,
+        message: `Khối câu hỏi ${index + 1} thiếu phần câu hỏi hoặc đáp án.`,
+      };
+    }
+
+    const questionLines = lines.slice(0, optionStart);
+    const optionLines = lines.slice(optionStart);
+    if (!questionLines.length) {
+      return {
+        success: false,
+        message: `Khối câu hỏi ${index + 1} chưa có nội dung câu hỏi.`,
+      };
+    }
+
+    if (optionLines.length < MIN_OPTIONS) {
+      return {
+        success: false,
+        message: `Khối câu hỏi ${index + 1} cần ít nhất ${MIN_OPTIONS} đáp án.`,
+      };
+    }
+
+    if (optionLines.length > MAX_OPTIONS) {
+      return {
+        success: false,
+        message: `Khối câu hỏi ${index + 1} chỉ hỗ trợ tối đa ${MAX_OPTIONS} đáp án.`,
+      };
+    }
+
+    let correctCount = 0;
+    const options = [];
+
+    for (let optIndex = 0; optIndex < optionLines.length; optIndex += 1) {
+      const line = optionLines[optIndex];
+      const match = line.match(/^([-*])\s*(.+)$/);
+      if (!match || !match[2].trim()) {
+        return {
+          success: false,
+          message: `Đáp án ${optIndex + 1} trong khối ${index + 1} không hợp lệ.`,
+        };
+      }
+      const isCorrect = match[1] === '*';
+      if (isCorrect) correctCount += 1;
+      options.push({
+        text: match[2].trim(),
+        isCorrect,
+      });
+    }
+
+    if (correctCount !== 1) {
+      return {
+        success: false,
+        message: `Khối câu hỏi ${index + 1} phải có duy nhất một đáp án đúng (đánh dấu *).`,
+      };
+    }
+
+    questions.push({
+      id: generateId('question'),
+      text: questionLines.join('\n'),
+      options: options.map((option) => ({
+        id: generateId('option'),
+        text: option.text,
+        isCorrect: option.isCorrect,
+      })),
+    });
+  }
+
+  return {
+    success: true,
+    questions,
+  };
+}
+
+function setBulkImportHint(message, variant) {
+  if (!dom.bulkImportHint) return;
+  dom.bulkImportHint.textContent = message;
+  dom.bulkImportHint.classList.remove('error', 'success');
+  if (variant === 'error') {
+    dom.bulkImportHint.classList.add('error');
+  } else if (variant === 'success') {
+    dom.bulkImportHint.classList.add('success');
+  }
 }
 
 function bootstrapState() {
@@ -69,6 +230,7 @@ function bindEvents() {
     addOptionRow();
   });
   dom.optionsContainer.addEventListener('click', handleOptionsContainerClick);
+  dom.bulkImportBtn?.addEventListener('click', handleBulkImport);
   dom.resetDataBtn.addEventListener('click', handleResetData);
 }
 
@@ -98,8 +260,8 @@ function handleQuestionSubmit(event) {
   const targetPack = state.packs.find((pack) => pack.id === packId);
   if (!targetPack) return;
 
-  const questionText = dom.questionText.value.trim();
-  if (!questionText) {
+  const rawQuestionText = dom.questionText.value;
+  if (!rawQuestionText.trim()) {
     dom.questionText.focus();
     return;
   }
@@ -133,7 +295,7 @@ function handleQuestionSubmit(event) {
 
   const newQuestion = {
     id: generateId('question'),
-    text: questionText,
+    text: rawQuestionText,
     options,
   };
 
@@ -447,6 +609,7 @@ function renderQuizArea() {
   progress.innerHTML = `<span>Câu ${session.currentIndex + 1}/${session.questions.length}</span>`;
 
   const prompt = document.createElement('h3');
+  prompt.className = 'question-text';
   prompt.textContent = question.text;
 
   const optionsWrapper = document.createElement('div');

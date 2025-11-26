@@ -56,6 +56,26 @@
         </fieldset>
         <p id="question-form-hint" class="helper-text" aria-live="polite"></p>
         <button type="submit" class="primary-btn">Lưu câu hỏi</button>
+
+        <div class="form-divider" role="separator" aria-hidden="true"></div>
+
+        <section class="bulk-import" aria-label="Nhập câu hỏi hàng loạt">
+          <div class="bulk-import-heading">
+            <h4>Nhập nhanh theo lô</h4>
+            <p class="helper-text">Mỗi câu hỏi cách nhau bằng một dòng trống. Đặt dấu <strong>*</strong> trước đáp án đúng.</p>
+          </div>
+          <label class="field">
+            <span>Dán danh sách câu hỏi</span>
+            <textarea
+              id="bulk-import-text"
+              rows="6"
+              placeholder="Ví dụ:\nCâu hỏi 1?\n*Đáp án đúng\n-Đáp án sai 1\n-Đáp án sai 2\n\nCâu hỏi 2?\n*Đáp án đúng\n-Đáp án sai khác"
+            ></textarea>
+          </label>
+          <p class="helper-text small">Mỗi câu phải có ít nhất hai đáp án và chỉ một đáp án được đánh dấu *</p>
+          <button type="button" id="bulk-import-btn" class="ghost-btn">Nhập nhanh vào gói</button>
+          <p id="bulk-import-hint" class="helper-text" aria-live="polite"></p>
+        </section>
       </form>
     </section>
 
