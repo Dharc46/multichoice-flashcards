@@ -480,6 +480,12 @@ function renderPackList() {
     });
 
     item.appendChild(selectButton);
+    const renameButton = document.createElement('button');
+    renameButton.className = 'icon-btn';
+    renameButton.title = 'Đổi tên gói';
+    renameButton.textContent = '✏️';
+    renameButton.addEventListener('click', () => renamePack(pack.id));
+    item.appendChild(renameButton);
     item.appendChild(deleteButton);
     dom.packList.appendChild(item);
   });
@@ -663,6 +669,20 @@ function deletePack(packId) {
     state.currentPackId = state.packs[0]?.id ?? null;
     state.quizSession = null;
   }
+  persistState();
+  renderAll();
+}
+
+function renamePack(packId) {
+  const pack = state.packs.find((item) => item.id === packId);
+  if (!pack) return;
+
+  const newName = prompt('Nhập tên mới cho gói', pack.name);
+  if (newName === null) return;
+  const trimmed = newName.trim();
+  if (!trimmed || trimmed === pack.name) return;
+
+  pack.name = trimmed;
   persistState();
   renderAll();
 }
